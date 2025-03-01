@@ -1,15 +1,69 @@
 const express = require('express');
-const { resolve } = require('path');
+const bodyParser = require('body-parser');
+const books = require('./data.json')
 
 const app = express();
-const port = 3010;
+app.use(bodyParser.json());
 
-app.use(express.static('static'));
+app.post('/books', (req, res) => {
+  const {id, title, author,genere,year,copies} = req.body;
+  if (!id || !title || !author || !genere || !year || !copies) {
+    return res.status(400).json({ message: 'All fields are required' });
+  }
+  else if(books.find(book => book.id === id)){
+    return res.status(400).json({ message: 'Book already exists so try adding different book' });
+  }
+  else{
+    newBook = { 
+      id: id,
+      title: title,
+      author: author,
+      genere: genere,
+      year: year,
+      copies: copies
+  }
+  books.push(newBook);
+  res.status(201).json(newBook);
+  }
+  });
 
-app.get('/', (req, res) => {
-  res.sendFile(resolve(__dirname, 'pages/index.html'));
-});
+  app.get('/books', (req, res) => {
+    res.json(books);
+  });
 
-app.listen(port, () => {
-  console.log(`Example app listening at http://localhost:${port}`);
+  app.get('/books/:id', (req, res) => { 
+    const book = books.find(book => book.book_id === req.params.id);
+    if (!book) {
+      return res.status(404).json({ message: 'Book not in records' });
+    }
+    res.json(book);
+  });
+
+  app.put('/books/:id', (req, res) => {
+    const book = books.find(book => book.book_id === req.params.id);
+    if (!book) {
+      return res.status(404).json({ message: 'Book not in records' });
+    }
+    book.id = req.body.id;
+    book.title = req.body.title;
+    book.author = req.body.author;
+    book.genere = req.body.genere;
+    book.year = req.body.year;
+    book.copies = req.body.copies;
+    res.json(book);
+  });
+
+  app.delete('/books/:id', (req, res) => {
+    const book = books.find(book => book.book_id === req.params.id);
+    if (!book) {
+      return res.status(404).json({ message: 'Book not in records' });
+    }
+    books = books.filter(book => book.id !== req.params.id);
+    res.json({ message: 'Book deleted' });
+  });
+
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
